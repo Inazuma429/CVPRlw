@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>词云</title>
+<script type="text/javascript" src="js/jquery-1.11.0.min.js"></script>
+<script src="js/echarts.js"></script>
+<script src="js/echarts-wordcloud.js"></script>
+</head>
+<body>
+<div id='show'style="display:block;overflow:auto;width:700px;height:1000px;float:left"></div>
+<div id='main'style="width:700px;height:1000px;float:left"></div>
+<script type="text/javascript">
+$(function(){
+	echartsCloud();
+});
+
+function eConsole(param){
+	if(typeof param.seriesIndex == 'undefined'){
+		return;
+	}
+	if(param.type=='click'){
+		var word=param.name;
+		var htmltext="<table style='text-align:center'><caption style='text-align:center'>论文题目与链接</caption>"
+		$.post(
+				'findServlet',
+				{'word':word},
+				function(result){
+					json=JSON.parse(result);
+					for(var i=0;i<json.length;i++){
+						htmltext+="<tr><td><a target='_blank'href='"+json[i].Link+"'>"+json[i].Title+"</a></td></tr>"
+					}
+					htmltext+="</table>"
+					$("#show").html(htmltext);
+				}
+				)
+	}
+}
+	function echartsCloud(){
+		$.ajax({
+			url:"CVPRServlet",
+			type:"post",
+			datatype:"json",
+			async:true,
+			success:function(data){
+				var json=JSON.parse(data);
+				var mydata=[];
+				size=json.length;
+				for(i=0;i<size;i++){
+					mydata.push({name:json[i].Kname,value:json[i].Tvalue});
+				}
+				var myChart=echarts.init(document.getElementById('main'));
+				var ecConfig=echarts.config;
+				myChart.on('click',eConsole);
+				var option={
+					title:{
+						text:'词云'
+					},
+					tooltip:{
+						show:true
+					},
+					series:[{
+						type:'wordCloud',
+						shape:'smooth',
+						gridSize:8,
+						size:['50%','50%'],
+						rotationRange:[-45,0,45,90],
+						textStyle:{
+							normal:{
+								fontFamily:'微软雅黑',
+								color:function(){
+									return 'rgb('+Math.round(Math.random()*255)+','
+											+Math.round(Math.random()*255)+','
+											+Math.round(Math.random()*255)+')'
+								}
+							},
+							emphasis:{
+								shadowBlur:5,
+								shadowColor:'#333'
+							}
+						},
+						left:'center',
+						top:'center',
+						right:null,
+						bottom:null,
+						width:'100%',
+						height:'100%',
+						data:mydata
+					}]
+				};
+				myChart.setOption(option);
+			}
+		});
+	}
+</script>
+</body>
+</html>
